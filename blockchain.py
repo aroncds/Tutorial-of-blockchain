@@ -3,7 +3,7 @@ import json
 from textwrap import dedent
 from time import time
 from uuid import uuid4
-from urlib.parse import urlparse
+from urllib.parse import urlparse
 import requests
 
 from flask import Flask, jsonify, request
@@ -17,9 +17,8 @@ class Blockchain(object):
         self.new_block(previous_hash=1, proof=100)
 
     def new_block(self, proof, previous_hash=None):
-        print(self.chain)
         block = {
-            'index': len(self.chain) + 1,
+            'index': len(self.chain),
             'timestamp': time(),
             'transactions': self.current_transactions,
             'proof': proof,
@@ -47,13 +46,14 @@ class Blockchain(object):
 
     def register_node(self, address):
         parsed_url = urlparse(address)
+        print(parsed_url)
         self.nodes.add(parsed_url.netloc)
 
     def valid_chain(self, chain):
         last_block = chain[0]
         current_index = 1
 
-        while current_index < len(chain)
+        while current_index < len(chain):
             block = chain[current_index]
             print(f'{last_block}')
             print(f'{block}')
@@ -62,7 +62,7 @@ class Blockchain(object):
             if block['previous_hash'] != self.hash(last_block):
                 return False
 
-            if not self.valid_proof(last_block['proof'], block['proof'])
+            if not self.valid_proof(last_block['proof'], block['proof']):
                 return False
             last_block = block
             current_index += 1
@@ -75,8 +75,9 @@ class Blockchain(object):
 
         max_length = len(self.chain)
 
-        for node in neighbours
+        for node in neighbours:
             response = requests.get(f'http://{node}/chain')
+            print(response.status_code)
             if response.status_code == 200:
                 length = response.json()['length']
                 chain = response.json()['chain']
@@ -99,8 +100,6 @@ class Blockchain(object):
         return guess_hash[:4] == "0000"
 
     def hash(self, block):
-        print(self)
-        print(block)
         block_string = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(block_string).hexdigest()
 
@@ -125,7 +124,7 @@ def register_node():
         blockchain.register_node(node)
     response = {
         'message': 'Append new node !!',
-        total_nodes: list(blockchain.nodes),
+        'total_nodes': list(blockchain.nodes),
     }
     return jsonify(response), 201
 
@@ -172,6 +171,7 @@ def mine():
     response = {
         'message': 'Mined new block!!',
         'index': block['index'],
+        'current_transactions': block['current_transactions'],
         'transactions': block['transactions'],
         'proof': block['proof'],
         'previous_hash': block['previous_hash']
